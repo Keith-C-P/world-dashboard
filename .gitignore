@@ -2,3 +2,5 @@
 .envrc
 target/
 *.bak
+result
+repomix-output.xml
