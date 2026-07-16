@@ -4,7 +4,7 @@
 
   inputs = {
     nixpkgs.url =
-      "github:NixOS/nixpkgs/nixos-unstable";
+      "github/nixpkgs/nixos-unstable";
 
     flake-utils.url =
       "github:numtide/flake-utils";
@@ -16,91 +16,112 @@
       inputs.nixpkgs.follows =
         "nixpkgs";
     };
+
   };
 
   outputs =
-    {
-      self,
-      nixpkgs,
-      flake-utils,
-      rust-overlay,
-    }:
+  {
+    self,
+    nixpkgs,
+    flake-utils,
+    rust-overlay,
+  }:
 
-    flake-utils.lib.eachDefaultSystem (
+  flake-utils.lib.eachDefaultSystem (
       system:
 
       let
-        pkgs =
-          import nixpkgs {
-            inherit system;
+      pkgs =
+      import nixpkgs {
+      inherit system;
 
-            overlays = [
-              (import rust-overlay)
-            ];
-          };
+      overlays = [
+      (import rust-overlay)
+      ];
+      };
 
-        rustToolchain =
-          pkgs.rust-bin.stable.latest.default.override {
-            extensions = [
-              "rust-src"
-              "rust-analyzer"
-              "clippy"
-              "rustfmt"
-            ];
-          };
+      rustToolchain =
+      pkgs.rust-bin.stable.latest.default.override {
+      extensions = [
+      "rust-src"
+      "rust-analyzer"
+      "clippy"
+      "rustfmt"
+      ];
+      };
 
-        people = [
-          {
-            name = "YOU";
-            location = "Hyderabad";
-            timezone = "Asia/Kolkata";
-          }
+  defaultPeople = [
+  {
+    name = "YOU";
+    location = "Hyderabad";
+    timezone = "Asia/Kolkata";
+  }
 
-          {
-            name = "ALICE";
-            location = "London";
-            timezone = "Europe/London";
-          }
+  {
+    name = "ALICE";
+    location = "London";
+    timezone = "Europe/London";
+  }
 
-          {
-            name = "BOB";
-            location = "New York";
-            timezone = "America/New_York";
-          }
+  {
+    name = "BOB";
+    location = "New York";
+    timezone = "America/New_York";
+  }
 
-          {
-            name = "CHARLIE";
-            location = "Tokyo";
-            timezone = "Asia/Tokyo";
-          }
+  {
+    name = "CHARLIE";
+    location = "Tokyo";
+    timezone = "Asia/Tokyo";
+  }
+  ];
+
+  mkWorldDashboard =
+  {
+    people ? defaultPeople,
+  }:
+
+  pkgs.callPackage
+    ./nix/package.nix
+    {
+      inherit
+        rustToolchain
+        people;
+    };
+
+  worldDashboard =
+    mkWorldDashboard {};
+  in
+  {
+    packages = {
+      default =
+        worldDashboard;
+
+      world-dashboard =
+        worldDashboard;
+    };
+
+    apps.default = {
+      type =
+        "app";
+
+      program =
+        "${worldDashboard}/bin/world-dashboard";
+    };
+
+    devShells.default =
+      pkgs.mkShell {
+        packages = [
+          rustToolchain
+            pkgs.pkg-config
         ];
+      };
 
-        worldDashboard =
-          pkgs.callPackage
-            ./nix/package.nix
-            {
-              inherit
-                rustToolchain
-                people;
-            };
-      in
-      {
-        packages.default =
-          worldDashboard;
+    lib = {
+      inherit
+        mkWorldDashboard;
+    };
+  }
+  );
 
-        apps.default = {
-          type = "app";
-          program =
-            "${worldDashboard}/bin/world-dashboard";
-        };
-
-        devShells.default =
-          pkgs.mkShell {
-            packages = [
-              rustToolchain
-              pkgs.pkg-config
-            ];
-          };
-      }
-    );
 }
