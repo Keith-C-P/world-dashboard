@@ -1,0 +1,22 @@
+[
+  {
+    "name": "YOU",
+    "location": "Hyderabad",
+    "timezone": "Asia/Kolkata"
+  },
+  {
+    "name": "ALICE",
+    "location": "London",
+    "timezone": "Europe/London"
+  },
+  {
+    "name": "BOB",
+    "location": "New York",
+    "timezone": "America/New_York"
+  },
+  {
+    "name": "CHARLIE",
+    "location": "Tokyo",
+    "timezone": "Asia/Tokyo"
+  }
+]
