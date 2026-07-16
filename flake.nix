@@ -26,121 +26,170 @@
       rust-overlay,
     }:
 
-    flake-utils.lib.eachDefaultSystem (
-      system:
+    let
+      defaultPeople = [
+        {
+          name =
+            "YOU";
 
-      let
-        pkgs =
-          import nixpkgs {
-            inherit system;
+          location =
+            "Hyderabad";
 
-            overlays = [
-              (import rust-overlay)
-            ];
-          };
+          timezone =
+            "Asia/Kolkata";
+        }
 
-        rustToolchain =
-          pkgs.rust-bin.stable.latest.default.override {
-            extensions = [
-              "rust-src"
-              "rust-analyzer"
-              "clippy"
-              "rustfmt"
-            ];
-          };
+        {
+          name =
+            "ALICE";
 
-        defaultPeople = [
-          {
-            name =
-              "YOU";
+          location =
+            "London";
 
-            location =
-              "Hyderabad";
+          timezone =
+            "Europe/London";
+        }
 
-            timezone =
-              "Asia/Kolkata";
-          }
+        {
+          name =
+            "BOB";
 
-          {
-            name =
-              "ALICE";
+          location =
+            "New York";
 
-            location =
-              "London";
+          timezone =
+            "America/New_York";
+        }
 
-            timezone =
-              "Europe/London";
-          }
+        {
+          name =
+            "CHARLIE";
 
-          {
-            name =
-              "BOB";
+          location =
+            "Tokyo";
 
-            location =
-              "New York";
+          timezone =
+            "Asia/Tokyo";
+        }
+      ];
 
-            timezone =
-              "America/New_York";
-          }
+      mkWorldDashboard =
+        {
+          pkgs,
+          people ? defaultPeople,
+        }:
 
-          {
-            name =
-              "CHARLIE";
-
-            location =
-              "Tokyo";
-
-            timezone =
-              "Asia/Tokyo";
-          }
-        ];
-
-        mkWorldDashboard =
-          {
-            people ? defaultPeople,
-          }:
-
-          pkgs.callPackage
-            ./nix/package.nix
-            {
-              inherit
-                rustToolchain
-                people;
+        let
+          rustToolchain =
+            pkgs.rust-bin.stable.latest.default.override {
+              extensions = [
+                "rust-src"
+                "rust-analyzer"
+                "clippy"
+                "rustfmt"
+              ];
             };
 
-        worldDashboard =
-          mkWorldDashboard {};
-
-      in
-      {
-        packages = {
-          default =
-            worldDashboard;
-
-          world-dashboard =
-            worldDashboard;
-        };
-
-        apps.default = {
-          type =
-            "app";
-
-          program =
-            "${worldDashboard}/bin/world-dashboard";
-        };
-
-        devShells.default =
-          pkgs.mkShell {
-            packages = [
+        in
+        pkgs.callPackage
+          ./nix/package.nix
+          {
+            inherit
               rustToolchain
-              pkgs.pkg-config
-            ];
+              people;
           };
 
-        lib = {
+    in
+    {
+      lib =
+        {
           inherit
             mkWorldDashboard;
         };
-      }
-    );
+
+      packages =
+        flake-utils.lib.eachDefaultSystem (
+          system:
+
+          let
+            pkgs =
+              import nixpkgs {
+                inherit system;
+
+                overlays = [
+                  (import rust-overlay)
+                ];
+              };
+
+            worldDashboard =
+              mkWorldDashboard {
+                inherit pkgs;
+              };
+
+          in
+          {
+            default =
+              worldDashboard;
+
+            world-dashboard =
+              worldDashboard;
+          }
+        );
+
+      apps =
+        flake-utils.lib.eachDefaultSystem (
+          system:
+
+          let
+            worldDashboard =
+              self.packages.${system}.default;
+
+          in
+          {
+            default = {
+              type =
+                "app";
+
+              program =
+                "${worldDashboard}/bin/world-dashboard";
+            };
+          }
+        );
+
+      devShells =
+        flake-utils.lib.eachDefaultSystem (
+          system:
+
+          let
+            pkgs =
+              import nixpkgs {
+                inherit system;
+
+                overlays = [
+                  (import rust-overlay)
+                ];
+              };
+
+            rustToolchain =
+              pkgs.rust-bin.stable.latest.default.override {
+                extensions = [
+                  "rust-src"
+                  "rust-analyzer"
+                  "clippy"
+                  "rustfmt"
+                ];
+              };
+
+          in
+          {
+            default =
+              pkgs.mkShell {
+                packages = [
+                  rustToolchain
+                  pkgs.pkg-config
+                ];
+              };
+          }
+        );
+    };
 }
